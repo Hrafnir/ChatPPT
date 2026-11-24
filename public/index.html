@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="nb">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#223e31">
+  <meta name="description" content="ChatPPT er en satirisk skoleassistent med klokketro på Planen for det ordinære.">
+  <title>ChatPPT · Rådgiverrommet</title>
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <script defer src="./config.js"></script>
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-compose" viewBox="0 0 24 24"><path d="M12 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-6"/><path d="m10 15 1-4 7.3-7.3a1.8 1.8 0 0 1 2.6 2.6L13.5 14Z"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M5 4h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-8l-6 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M7 9h10M7 13h6"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+    <symbol id="i-board" viewBox="0 0 24 24"><path d="M3 4h18v13H3zM8 21l3-4m5 4-3-4M7 9h6m-6 4h4"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></symbol>
+    <symbol id="i-group" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M2.5 20v-2a5 5 0 0 1 5-5H11a5 5 0 0 1 5 5v2M16 5.5a3 3 0 0 1 0 5.5m2 3a4 4 0 0 1 3.5 4v2"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="m3 10 18-7-6.3 18-3.6-7.6L3 10Z"/><path d="M11.1 13.4 21 3"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5.5" y="10.5" width="13" height="10" rx="2"/><path d="M8.5 10.5v-4a3.5 3.5 0 0 1 7 0v4"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6V3Z"/><path d="M14 3v5h5M9 12h7m-7 4h5"/></symbol>
+  </svg>
+  <a class="skip-link" href="#message">Hopp til skrivefeltet</a>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="Samtaler">
+      <div class="brand">
+        <img src="./icon.svg" alt="" width="39" height="39"><span>Chat<span class="brand-ppt">PPT</span></span>
+        <button class="icon-button drawer-close mobile-only" id="close-nav" type="button" aria-label="Lukk menyen"><svg class="icon"><use href="#i-close"/></svg></button>
+      </div>
+      <button id="new-chat" type="button" class="new-chat"><svg class="icon"><use href="#i-compose"/></svg>Ny samtale</button>
+      <nav aria-labelledby="history-heading" class="history">
+        <h2 id="history-heading">Dine samtaler</h2>
+        <p id="empty-history">Ingen samtaler ennå.</p>
+        <ul id="history-list"></ul>
+      </nav>
+      <button id="about" class="about-button" type="button"><svg class="icon"><use href="#i-info"/></svg>Om ChatPPT</button>
+    </aside>
+    <button class="backdrop" id="backdrop" type="button" aria-label="Lukk menyen" tabindex="-1" hidden></button>
+    <main class="main">
+      <header class="top-bar">
+        <button class="icon-button mobile-only" id="open-nav" type="button" aria-label="Åpne samtalemenyen" aria-controls="sidebar" aria-expanded="false"><svg class="icon"><use href="#i-menu"/></svg></button>
+        <div class="room-name"><svg class="icon"><use href="#i-chat"/></svg><span class="desktop-room">Rådgiverrommet</span><span class="mobile-only">ChatPPT</span></div>
+        <span class="satire-tag">SATIRE</span>
+      </header>
+      <div class="scroll-area" id="scroll-area">
+        <div class="content-width">
+          <section id="welcome" aria-labelledby="welcome-title">
+            <div class="welcome-paper">
+              <div class="paper-text">
+                <div class="paper-category">Planen for det ordinære</div>
+                <h1 id="welcome-title">Hva skjer i<br><em>klasserommet?</em></h1>
+                <p>Fortell om en utfordring i skolehverdagen. Jeg er sikker på at vi finner en løsning innenfor PLO.</p>
+              </div>
+              <div class="paper-art"><img src="./veileder.png" alt="" width="420" height="420"></div>
+            </div>
+            <div class="starters">
+              <h2>Prøv en henvendelse</h2>
+              <div class="starter-grid">
+                <button type="button" class="starter-card" data-starter="Jeg har 28 elever, én voksen og fire som trenger hjelp samtidig. Hvordan får jeg det til?">
+                  <span class="card-icon"><svg class="icon"><use href="#i-group"/></svg></span>
+                  <strong>For få hender</strong><span>28 elever og én av meg.</span>
+                </button>
+                <button type="button" class="starter-card" data-starter="Planleggingstiden forsvant i møter. Når skal jeg forberede morgendagens undervisning?">
+                  <span class="card-icon rust"><svg class="icon"><use href="#i-clock"/></svg></span>
+                  <strong>En full kalender</strong><span>Planleggingstiden gikk til møter.</span>
+                </button>
+                <button type="button" class="starter-card" data-starter="Klassen krangler om hvem som får sitte sammen, og vi kommer aldri i gang med gruppearbeidet. Hva gjør jeg?">
+                  <span class="card-icon ochre"><svg class="icon"><use href="#i-board"/></svg></span>
+                  <strong>Uro i klassen</strong><span>Gruppearbeidet sporet av.</span>
+                </button>
+              </div>
+            </div>
+          </section>
+          <section id="transcript" aria-label="Samtale med ChatPPT" hidden></section>
+        </div>
+      </div>
+      <div class="composer-dock">
+        <div class="content-width">
+          <form id="composer" class="composer">
+            <label for="message" class="visually-hidden">Skriv en melding til ChatPPT</label>
+            <textarea id="message" placeholder="Hva står du i på skolen?" rows="1" maxlength="2000"></textarea>
+            <button id="send" type="submit" aria-label="Send melding" title="Send melding" disabled><svg class="icon"><use href="#i-send"/></svg></button>
+          </form>
+          <div class="composer-meta"><span><svg class="icon"><use href="#i-lock"/></svg>Skriv uten navn og elevopplysninger.</span><span class="keyboard-tip"><kbd>Enter</kbd> for å sende</span></div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <dialog id="about-dialog" aria-labelledby="about-title">
+    <div class="dialog-head"><img src="./icon.svg" alt="" width="43" height="43"><button class="icon-button" id="close-about" type="button" aria-label="Lukk"><svg class="icon"><use href="#i-close"/></svg></button></div>
+    <h2 id="about-title">Om ChatPPT</h2>
+    <p>ChatPPT er en uavhengig skoleparodi. Her havner både kopimaskintrøbbel og bemanningskabalen i PLO, «Planen for det ordinære».</p>
+    <p>Humoren er rettet mot systemet som stadig finner flere oppgaver til læreren. En virkelig elevsak hører hjemme hos menneskene som kan følge den opp.</p>
+    <p class="about-privacy">Meldinger sendes til OpenAI for å lage svar. Bruk oppdiktede eller anonymiserte situasjoner. Listen over samtaler tømmes når du laster siden på nytt.</p>
+  </dialog>
+  <div id="announcer" class="visually-hidden" role="status" aria-live="polite"></div>
+</body>
+</html>

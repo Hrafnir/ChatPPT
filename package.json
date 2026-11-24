@@ -1,0 +1,14 @@
+{
+  "name": "chatppt",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "En lett satirisk PLO-rådgiver for norske lærere.",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env.local server.mjs",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22.9"
+  }
+}
