@@ -3,4 +3,6 @@
 !.env.example
 node_modules/
 .vercel/
+dist/
+.sites-build/
 .DS_Store

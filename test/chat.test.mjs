@@ -6,10 +6,12 @@ import { createChatHandler } from "../lib/chat.mjs";
 const defaultEnv = { OPENAI_API_KEY: "fixture" };
 const question = { role: "user", content: "Kopimaskinen er tom for toner." };
 
-function modelResult(svar = "Innenfor PLO i klasserommet får hver elev tegne sin egen kopi.", modus = "satire") {
+const ordinary = "Teamet bes gjennomgå behovet for kopier i neste planleggingsøkt. Den videre oppfølgingen skjer i klasserommet innenfor skolens rammer og PLO (Planen for det ordinære).";
+
+function modelResult(svar = ordinary, modus = "satire", veiledning = null) {
   return Response.json({
     status: "completed",
-    output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify({ svar, modus }) }] }],
+    output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify({ modus, veiledning, svar }) }] }],
   });
 }
 
@@ -47,7 +49,7 @@ test("sends a bounded multi-turn request to Responses and serves the model's act
   messages.push({ role: "assistant", content: "Hva har du prøvd?" }, question);
   const res = await call(chat, { body: JSON.stringify({ messages }), streamed: true });
   assert.equal(res.status, 200);
-  assert.match(res.body.reply, /tegne sin egen kopi/);
+  assert.deepEqual(res.body, { reply: ordinary });
   const [request] = calls;
   assert.equal(request.url, "https://api.openai.com/v1/responses");
   assert.equal(request.model, "gpt-5.6-luna");
@@ -61,11 +63,66 @@ test("sends a bounded multi-turn request to Responses and serves the model's act
   assert.ok(request.input.reduce((sum, item) => sum + item.content.length, 0) <= 6000);
 });
 
-test("guarantees the satirical conclusion while keeping serious responses intact", async () => {
-  const replies = [modelResult("Vi kan utvide tirsdagen med fem timer."), modelResult("Hent hjelp nå.", "alvor")];
-  const chat = createChatHandler({ env: defaultEnv, fetchImpl: async () => replies.shift() });
-  assert.match((await call(chat)).body.reply, /PLO.*klasserommet/);
-  assert.deepEqual((await call(chat)).body, { reply: "Hent hjelp nå." });
+test("a serious answer carries separate factual guidance and an administrative classroom conclusion", async () => {
+  const messages = [{ role: "user", content: "En elev har kollapset i gymsalen og svarer ikke." }];
+  const guidance = "Ring 113 nå og følg veiledningen fra operatøren.";
+  const satire = "Når eleven har fått hjelp, bes teamet avklare hvem som følger opp undervisningsplanen.";
+  const chat = createChatHandler({ env: defaultEnv, fetchImpl: async () => modelResult(satire, "alvor", guidance) });
+  const res = await call(chat, { messages });
+  assert.equal(res.status, 200);
+  assert.equal(res.body.guidance, guidance);
+  assert.ok(res.body.reply.startsWith(satire));
+  assert.match(res.body.reply, /PLO \(Planen for det ordinære\)/);
+  assert.match(res.body.reply, /klasserommet/);
+  assert.doesNotMatch(res.body.reply, /113/);
+});
+
+test("persistent concerns can receive practical guidance without an emergency referral", async () => {
+  const messages = [{ role: "user", content: "En elev har gruet seg til friminuttene i flere uker." }];
+  const guidance = "Meld fra til rektor snarest. Avtal med eleven hvem som følger opp tryggheten i friminuttene.";
+  const satire = "Innenfor skolens rammer følges planarbeidet videre i klasserommet etter PLO (Planen for det ordinære).";
+  const chat = createChatHandler({ env: defaultEnv, fetchImpl: async () => modelResult(satire, "alvor", guidance) });
+  assert.deepEqual((await call(chat, { messages })).body, { guidance, reply: satire });
+});
+
+test("completes only missing PLO and classroom details without duplicating present terms", async () => {
+  const partial = [
+    "Den videre gjennomgangen legges til PLO.",
+    "Tiltakene i klasserommet følges opp i Planen for det ordinære.",
+    "Arbeidsdelingen i klasserommet tas opp på neste møte.",
+  ];
+  const chat = createChatHandler({ env: defaultEnv, fetchImpl: async () => modelResult(partial.shift()) });
+  while (partial.length) {
+    const { reply } = (await call(chat)).body;
+    assert.equal(reply.match(/\bPLO\b/gi)?.length, 1);
+    assert.equal(reply.match(/planen for det ordinære/gi)?.length, 1);
+    assert.equal(reply.match(/klasserommet/gi)?.length, 1);
+  }
+});
+
+test("missing serious guidance, malformed model fields and refusals never return satire on its own", async () => {
+  const refusal = Response.json({
+    status: "completed",
+    output: [{ type: "message", content: [{ type: "refusal", refusal: "provider details" }] }],
+  });
+  const bad = [
+    modelResult(ordinary, "alvor", null), modelResult(ordinary, "alvor", " "),
+    modelResult(" ", "alvor", "Kontakt rektor."), modelResult(ordinary, "satire", "Kontakt rektor."),
+    { invalid: true },
+  ];
+  const chat = createChatHandler({
+    env: defaultEnv, fetchImpl: async () => {
+      const next = bad.shift();
+      return next?.invalid ? Response.json({ status: "completed", output: {} }) : next || refusal;
+    },
+  });
+  while (bad.length) {
+    const res = await call(chat);
+    assert.equal(res.status, 502);
+    assert.ok(res.body.error);
+    assert.equal(res.body.reply, undefined);
+  }
+  assert.equal((await call(chat)).status, 422);
 });
 
 test("requires a key, a valid last user message, allowed roles, bounded text and JSON", async () => {
